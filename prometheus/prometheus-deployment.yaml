@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: zenoh-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        ports:
+        - containerPort: 9090
+        resources:
+          requests:
+            cpu: "250m"   # 250 millicores (0.25 CPU)
+            memory: "256Mi"  # 256 MB RAM
+          limits:
+            cpu: "500m"   # 500 millicores (0.5 CPU)
+            memory: "512Mi"  # 512 MB RAM
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus/prometheus.yml
+          subPath: prometheus.yml
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config

@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: zenoh-monitoring
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+      file:
+        include: [/var/log/zenoh-app/*.log]
+        start_at: beginning
+        operators:
+          - type: regex_parser
+            regex: '(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+(?P<level>\w+)\s+(?P<message>.*)'
+            timestamp:
+              parse_from: attributes.time
+              layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            attributes: [level, message]
+
+    processors:
+      batch:
+
+    exporters:
+      logging:
+        loglevel: debug
+      prometheus:
+        endpoint: "0.0.0.0:9090"
+      loki:
+        endpoint: "http://loki-service.zenoh-monitoring:3100/loki/api/v1/push"
+
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp, file]
+          processors: [batch]
+          exporters: [logging, loki]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [logging, prometheus]
