@@ -147,3 +147,9 @@ This repository contains Kubernetes YAML files for deploying a comprehensive mon
     ```
 
     **Important:** Replace `<repository_url>` with your actual repository URL and `your-zenoh-app-image:latest` with the correct image for your Zenoh application.
+
+## Fluentbit 
+
+kubectl exec -it -n zenoh-monitoring $(kubectl get pod -n zenoh-monitoring -l app=fluent-bit-log-forwarder -o jsonpath='{.items[0].metadata.name}') -- bash
+
+echo "This is a test log message" > /var/log/app/test.log
