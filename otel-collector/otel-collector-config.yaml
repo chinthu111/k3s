@@ -10,7 +10,7 @@ data:
         protocols:
           grpc:
           http:
-      file:
+      filelog:   # Changed from 'file' to 'filelog'
         include: [/var/log/zenoh-app/*.log]
         start_at: beginning
         operators:
@@ -25,8 +25,7 @@ data:
       batch:
 
     exporters:
-      logging:
-        loglevel: debug
+      debug:  # Changed from 'logging' to 'debug'
       prometheus:
         endpoint: "0.0.0.0:9090"
       loki:
@@ -35,10 +34,10 @@ data:
     service:
       pipelines:
         logs:
-          receivers: [otlp, file]
+          receivers: [otlp, filelog]  # Changed from 'file' to 'filelog'
           processors: [batch]
-          exporters: [logging, loki]
+          exporters: [debug, loki]  # Changed from 'logging' to 'debug'
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [logging, prometheus]
+          exporters: [debug, prometheus]  # Changed from 'logging' to 'debug'
