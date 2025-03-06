@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: zenoh-monitoring
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        flush        1
+        log_level    info
+        daemon       off
+
+    [INPUT]
+        Name tail
+        Path /var/log/app/*.log
+        Tag app.logs
+
+    [OUTPUT]
+        Name otlp
+        Match app.logs
+        Host otel-collector.zenoh-monitoring
+        Port 4317
