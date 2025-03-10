@@ -12,6 +12,18 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
-          kubectl exec -n zenoh-monitoring $(kubectl get pod -n zenoh-monitoring -l app=fluent-bit-log-forwarder -o jsonpath='{.items[0].metadata.name}') -- bash -c 'echo "Test log message for Loki" > /var/log/app/test-loki.log'
+          echo "Test log message for Loki" > /test-logs/test-loki.log
+        volumeMounts:
+        - name: app-logs
+          mountPath: /test-logs
+      - name: fluent-bit-test
+        image: fluent/fluent-bit:latest
+        volumeMounts:
+        - name: app-logs
+          mountPath: /var/log/app/
+          readOnly: false
+      volumes:
+      - name: app-logs
+        emptyDir: {}
       restartPolicy: Never
   backoffLimit: 4
