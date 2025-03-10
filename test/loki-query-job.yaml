@@ -9,8 +9,9 @@ spec:
       containers:
       - name: test
         image: curlimages/curl:latest
-        command: ["/bin/sh", "-c"]
-        args:
+        command:
+        - /bin/sh
+        - -c
         - |
           LOKI_RESPONSE=$(curl -s "http://loki-service.zenoh-monitoring:3100/loki/api/v1/query_range?query={service=\"fluent-bit-log-forwarder\"}|~\"Test log message for Loki\"")
           if [[ "$LOKI_RESPONSE" == *'"Test log message for Loki"'* ]]; then
@@ -20,5 +21,5 @@ spec:
             echo "Loki test failed"
             exit 1
           fi
-      restartPolicy: Never
-  backoffLimit: 4
+        restartPolicy: Never
+      backoffLimit: 4
