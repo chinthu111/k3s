@@ -10,7 +10,7 @@ data:
         protocols:
           grpc:
           http:
-      filelog:   # Changed from 'file' to 'filelog'
+      filelog:
         include: [/var/log/zenoh-app/*.log]
         start_at: beginning
         operators:
