@@ -153,3 +153,54 @@ This repository contains Kubernetes YAML files for deploying a comprehensive mon
 kubectl exec -it -n zenoh-monitoring $(kubectl get pod -n zenoh-monitoring -l app=fluent-bit-log-forwarder -o jsonpath='{.items[0].metadata.name}') -- bash
 
 echo "This is a test log message" > /var/log/app/test.log
+
+
+
+## Common interface to logs
+
+Application (Python, Java, Rust, etc.):
+
+Applications written in various languages that need to send logs to the observability stack.
+Standardized Logging Library/Wrapper:
+
+A language-specific library or wrapper that simplifies log sending.
+Key Features:
+Simple API: A minimal API for developers to send logs (e.g., log.info("message"), log.error("error message")).
+Automatic OTLP Conversion: Handles the conversion of log messages to the OTLP format.
+OTel Collector Endpoint Configuration: Pre-configured with the OTel Collector service endpoint.
+Automatic Metadata: Adds standard metadata (service name, environment, etc.) to log messages.
+Error Handling: Handles network errors and retries.
+Language Specific: Will need to be created for each language.
+Implementation:
+Language-specific SDKs (e.g., Python, Java, Rust) for OTel.
+Wrappers around the OTel SDKs to simplify usage.
+Configuration management for OTel Collector endpoint.
+OTLP Endpoint (OTel Collector Service):
+
+The Kubernetes service that exposes the OTel Collector's OTLP receiver.
+Applications send OTLP data to this endpoint.
+OTel Collector:
+
+Receives OTLP data.
+Forwards logs to Loki.
+Exports metrics to Prometheus.
+Loki:
+
+Stores log data.
+Prometheus:
+
+Stores metrics data.
+Grafana:
+
+Visualizes logs and metrics.
+
+```mermaid
+graph LR
+    A[Application - Python, Java, Rust, etc.] --> B{Standardized Logging Library/Wrapper};
+    B --> C[OTLP Endpoint - Otel Collector Service];
+    C --> D[OTel Collector];
+    D --> E[Loki];
+    D --> F[Prometheus];
+    E --> G[Grafana - Loki DataSource];
+    F --> G;
+```
