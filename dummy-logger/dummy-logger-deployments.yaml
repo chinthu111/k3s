@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-logger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dummy-logger
+  template:
+    metadata:
+      labels:
+        app: dummy-logger
+    spec:
+      containers:
+      - name: dummy-logger
+        image: dummy-logger:latest
+        imagePullPolicy: IfNotPresent
