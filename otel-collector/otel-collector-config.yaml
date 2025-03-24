@@ -11,21 +11,47 @@ data:
           grpc:
           http:
       filelog:
-        include: [/var/log/zenoh-app/*.log]
-        start_at: beginning
-        operators:
-          - type: regex_parser
-            regex: '(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+(?P<level>\w+)\s+(?P<message>.*)'
-            timestamp:
-              parse_from: attributes.time
-              layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-            attributes: [level, message]
+        - include: [/var/log/zenoh-app/*.log]
+          start_at: beginning
+          operators:
+            - type: regex_parser
+              regex: '(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+(?P<level>\w+)\s+(?P<message>.*)'
+              timestamp:
+                parse_from: attributes.time
+                layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+              attributes: [level, message] #This is correct
+        - include: [/var/log/containers/*.log] # Kubernetes container logs
+          start_at: beginning
+          operators:
+            - type: json_parser
+              json:
+                message: $.log
+                stream: $.kubernetes.container_name
+                timestamp: $.time
+              attributes: #This is correct
+                - key: kubernetes.container_name
+                  value: $.kubernetes.container_name
+                - key: kubernetes.namespace_name
+                  value: $.kubernetes.namespace_name
+                - key: kubernetes.pod_name
+                  value: $.kubernetes.pod_name
+            - type: attributes #This is the processor, and it is in the correct location.
+              attributes:
+                - key: resource.namespace
+                  from: attribute
+                  attribute: kubernetes.namespace_name
+                - key: resource.pod
+                  from: attribute
+                  attribute: kubernetes.pod_name
+                - key: resource.container
+                  from: attribute
+                  attribute: kubernetes.container_name
 
     processors:
       batch:
 
     exporters:
-      debug:  # Changed from 'logging' to 'debug'
+      debug:
       prometheus:
         endpoint: "0.0.0.0:9090"
       loki:
@@ -34,10 +60,10 @@ data:
     service:
       pipelines:
         logs:
-          receivers: [otlp, filelog]  # Changed from 'file' to 'filelog'
+          receivers: [otlp, filelog]
           processors: [batch]
-          exporters: [debug, loki]  # Changed from 'logging' to 'debug'
+          exporters: [debug, loki]
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [debug, prometheus]  # Changed from 'logging' to 'debug'
+          exporters: [debug, prometheus]
