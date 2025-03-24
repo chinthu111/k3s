@@ -11,44 +11,47 @@ data:
           grpc:
           http:
       filelog:
-        - include: [/var/log/zenoh-app/*.log]
-          start_at: beginning
-          operators:
-            - type: regex_parser
-              regex: '(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+(?P<level>\w+)\s+(?P<message>.*)'
-              timestamp:
-                parse_from: attributes.time
-                layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-              attributes: [level, message] #This is correct
-        - include: [/var/log/containers/*.log] # Kubernetes container logs
-          start_at: beginning
-          operators:
-            - type: json_parser
-              json:
-                message: $.log
-                stream: $.kubernetes.container_name
-                timestamp: $.time
-              attributes: #This is correct
-                - key: kubernetes.container_name
-                  value: $.kubernetes.container_name
-                - key: kubernetes.namespace_name
-                  value: $.kubernetes.namespace_name
-                - key: kubernetes.pod_name
-                  value: $.kubernetes.pod_name
-            - type: attributes #This is the processor, and it is in the correct location.
-              attributes:
-                - key: resource.namespace
-                  from: attribute
-                  attribute: kubernetes.namespace_name
-                - key: resource.pod
-                  from: attribute
-                  attribute: kubernetes.pod_name
-                - key: resource.container
-                  from: attribute
-                  attribute: kubernetes.container_name
+        include: 
+          - /var/log/zenoh-app/*.log
+        start_at: beginning
+        operators:
+          - type: regex_parser
+            regex: '(?P<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+(?P<level>\w+)\s+(?P<message>.*)'
+            timestamp:
+              parse_from: attributes.time
+              layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      filelog/kubernetes:
+        include: 
+          - /var/log/containers/*.log
+        start_at: beginning
+        operators:
+          - type: json_parser
+            timestamp:
+              parse_from: attributes.time
+            parse_from: attributes.log
+          - type: move
+            from: attributes.kubernetes.container_name
+            to: resource.container
+          - type: move
+            from: attributes.kubernetes.namespace_name
+            to: resource.namespace
+          - type: move
+            from: attributes.kubernetes.pod_name
+            to: resource.pod
 
     processors:
       batch:
+      attributes:
+        actions:
+          - key: resource.namespace
+            action: insert
+            from_attribute: kubernetes.namespace_name
+          - key: resource.pod
+            action: insert
+            from_attribute: kubernetes.pod_name
+          - key: resource.container
+            action: insert
+            from_attribute: kubernetes.container_name
 
     exporters:
       debug:
@@ -60,8 +63,8 @@ data:
     service:
       pipelines:
         logs:
-          receivers: [otlp, filelog]
-          processors: [batch]
+          receivers: [otlp, filelog, filelog/kubernetes]
+          processors: [batch, attributes]
           exporters: [debug, loki]
         metrics:
           receivers: [otlp]
