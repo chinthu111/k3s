@@ -1,18 +1,27 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: dummy-logger
+  name: zenoh-app-pod
+  namespace: zenoh-monitoring
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: dummy-logger
-  template:
-    metadata:
-      labels:
-        app: dummy-logger
-    spec:
-      containers:
-      - name: dummy-logger
-        image: dummy-logger:latest
-        imagePullPolicy: IfNotPresent
+  containers:
+  - name: zenoh-app-container
+    image: your-app-image:latest # Build and push your Docker image
+    volumeMounts:
+    - name: zenoh-logs
+      mountPath: /var/log/zenoh-app
+  - name: otel-collector-sidecar
+    image: otel/opentelemetry-collector-contrib:latest
+    args: ["--config=/etc/otel-collector/otel-collector-config.yaml"]
+    volumeMounts:
+    - name: zenoh-logs
+      mountPath: /var/log/zenoh-app
+    - name: otelcol-config
+      mountPath: /etc/otel-collector/otel-collector-config.yaml
+      subPath: otel-collector-config.yaml
+  volumes:
+  - name: zenoh-logs
+    emptyDir: {}
+  - name: otelcol-config
+    configMap:
+      name: otel-collector-config # Your existing ConfigMap
