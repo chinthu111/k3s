@@ -1,29 +1,24 @@
+
+
 import logging
 import time
 import random
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(filename='/var/log/zenoh-app/app.log', level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
 
-logger = logging.getLogger(__name__)
-
-# Dummy log generator
-def generate_logs():
-    while True:
-        log_level = random.choice(["INFO", "WARNING", "ERROR"])
-        message = f"This is a {log_level} log message."
-        
-        if log_level == "INFO":
-            logger.info(message)
-        elif log_level == "WARNING":
-            logger.warning(message)
-        elif log_level == "ERROR":
-            logger.error(message)
-        
-        time.sleep(random.randint(1, 5))
+def generate_log():
+    log_level = random.choice(['INFO', 'WARNING', 'ERROR'])
+    message = f"This is a {log_level} log message. Random value: {random.randint(1, 100)}"
+    if log_level == 'INFO':
+        logging.info(message)
+    elif log_level == 'WARNING':
+        logging.warning(message)
+    else:
+        logging.error(message)
 
 if __name__ == "__main__":
-    generate_logs()
+    while True:
+        generate_log()
+        time.sleep(random.uniform(1, 5)) # Log every 1 to 5 seconds
