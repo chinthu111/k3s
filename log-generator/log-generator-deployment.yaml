@@ -1,25 +1,33 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: log-generator
+  name: busybox-log-pod
   namespace: zenoh-monitoring
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: log-generator
-  template:
-    metadata:
-      labels:
-        app: log-generator
-    spec:
-      containers:
-      - name: log-generator
-        image: your-log-generator-image:latest # Replace with your image
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
+  containers:
+  - name: busybox-container
+    image: busybox:latest
+    command: ["/bin/sh", "-c"]
+    args:
+    - while true; do
+        echo "$(date) INFO: This is a busybox log entry" >> /var/log/app/busybox.log;
+        sleep 5;
+      done
+    volumeMounts:
+    - name: app-logs
+      mountPath: /var/log/app
+  - name: otel-collector-sidecar
+    image: otel/opentelemetry-collector-contrib:latest
+    args: ["--config=/etc/otel-collector/otel-collector-config.yaml"]
+    volumeMounts:
+    - name: app-logs
+      mountPath: /var/log/app
+    - name: otelcol-config
+      mountPath: /etc/otel-collector/otel-collector-config.yaml
+      subPath: otel-collector-config.yaml
+  volumes:
+  - name: app-logs
+    emptyDir: {}
+  - name: otelcol-config
+    configMap:
+      name: otel-collector-config
